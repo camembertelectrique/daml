@@ -45,7 +45,7 @@ private[kvutils] case class ProcessTransactionSubmission(
       "Authorize submitter" -> authorizeSubmitter,
       "Check Informee Parties Allocation" -> checkInformeePartiesAllocation,
       "Deduplicate" -> deduplicateCommand,
-      "Validate LET/TTL" -> validateLetAndTtl,
+      "Validate Ledger Time" -> validateLedgerTime,
       "Validate Contract Key Uniqueness" -> validateContractKeyUniqueness,
       "Validate Model Conformance" -> timed(Metrics.interpretTimer, validateModelConformance),
       "Authorize and build result" -> authorizeAndBlind.flatMap(buildFinalResult)
@@ -136,24 +136,14 @@ private[kvutils] case class ProcessTransactionSubmission(
     }
 
   /** Validate ledger effective time and the command's time-to-live. */
-  private def validateLetAndTtl: Commit[Unit] = delay {
+  private def validateLedgerTime: Commit[Unit] = delay {
     val timeModel = config.timeModel
-    val givenLET = txLet.toInstant
-    val givenMRT = parseTimestamp(txEntry.getSubmitterInfo.getMaximumRecordTime).toInstant
 
-    if (timeModel.checkLet(
-        currentTime = recordTime.toInstant,
-        givenLedgerEffectiveTime = givenLET,
-        givenMaximumRecordTime = givenMRT)
-      /* NOTE(JM): This check has been disabled to be more lenient while
-       * we're still in beta phase. Time model is being redesigned and
-       * appropriate checks will be put back in place along with the new
-       * implementation.
-       *
-       * && timeModelChecker.checkTtl(givenLET, givenMRT) */ )
-      pass
-    else
-      reject(buildRejectionLogEntry(RejectionReason.MaximumRecordTimeExceeded))
+    timeModel
+      .checkTime(ledgerTime = txLet.toInstant, recordTime = recordTime.toInstant)
+      .fold(
+        reason => reject(buildRejectionLogEntry(RejectionReason.InvalidLedgerTime(reason))),
+        _ => pass)
   }
 
   /** Validate the submission's conformance to the DAML model */
