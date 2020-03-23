@@ -110,11 +110,11 @@ class TransactionTimeModelComplianceIT
       .map {
         _ should matchPattern {
           case LedgerEntry.Rejection(
-          _,
-          "cmdId",
-          "appId",
-          "submitter",
-          RejectionReason.InvalidLedgerTime(_)) =>
+              _,
+              "cmdId",
+              "appId",
+              "submitter",
+              RejectionReason.InvalidLedgerTime(_)) =>
         }
       }
   }
@@ -124,16 +124,16 @@ class TransactionTimeModelComplianceIT
       .map {
         _ should matchPattern {
           case LedgerEntry.Transaction(
-          Some("cmdId"),
-          _,
-          Some("appId"),
-          Some("submitter"),
-          Some("wfid"),
-          _,
-          _,
-          _,
-          _,
-          ) =>
+              Some("cmdId"),
+              _,
+              Some("appId"),
+              Some("submitter"),
+              Some("wfid"),
+              _,
+              _,
+              _,
+              _,
+              ) =>
         }
       }
   }
