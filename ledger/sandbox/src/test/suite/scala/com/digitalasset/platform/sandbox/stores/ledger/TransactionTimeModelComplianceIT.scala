@@ -26,7 +26,7 @@ import com.digitalasset.ledger.api.testing.utils.{
   SuiteResourceManagementAroundEach
 }
 import com.digitalasset.logging.LoggingContext.newLoggingContext
-import com.digitalasset.platform.sandbox.stores.ledger.TransactionMRTComplianceIT._
+import com.digitalasset.platform.sandbox.stores.ledger.TransactionTimeModelComplianceIT._
 import com.digitalasset.platform.sandbox.{LedgerResource, MetricsAround}
 import com.digitalasset.platform.store.entries.LedgerEntry
 import org.scalatest.concurrent.{AsyncTimeLimitedTests, ScalaFutures}
@@ -39,7 +39,7 @@ import scala.concurrent.duration._
 import scala.language.implicitConversions
 
 @SuppressWarnings(Array("org.wartremover.warts.Any"))
-class TransactionMRTComplianceIT
+class TransactionTimeModelComplianceIT
     extends AsyncWordSpec
     with AkkaBeforeAndAfterAll
     with MultiResourceBase[BackendType, Ledger]
@@ -73,60 +73,96 @@ class TransactionMRTComplianceIT
     }
   }
 
-  "A Ledger" should {
-    "reject transactions with a record time after the MRT" in allFixtures { ledger =>
-      val seed = Some(crypto.Hash.hashPrivateKey(this.getClass.getName))
+  private[this] val submissionSeed = Some(crypto.Hash.hashPrivateKey(this.getClass.getName))
 
-      val dummyTransaction: Transaction.AbsTransaction =
-        GenTransaction(HashMap.empty, ImmArray.empty)
+  private[this] def publishTxAt(ledger: Ledger, ledgerTime: Instant) = {
+    val dummyTransaction: Transaction.AbsTransaction =
+      GenTransaction(HashMap.empty, ImmArray.empty)
 
-      val submitterInfo = SubmitterInfo(
-        submitter = Ref.Party.assertFromString("submitter"),
-        applicationId = Ref.LedgerString.assertFromString("appId"),
-        commandId = Ref.LedgerString.assertFromString("cmdId"),
-        maxRecordTime = Time.Timestamp.assertFromInstant(MRT),
-        deduplicateUntil = Instant.EPOCH
-      )
-      val transactionMeta = TransactionMeta(
-        ledgerEffectiveTime = Time.Timestamp.assertFromInstant(LET),
-        workflowId = Some(Ref.LedgerString.assertFromString("wfid")),
-        submissionTime = Time.Timestamp.assertFromInstant(ST),
-        submissionSeed = seed,
-        optUsedPackages = None,
-      )
+    val submitterInfo = SubmitterInfo(
+      submitter = Ref.Party.assertFromString("submitter"),
+      applicationId = Ref.LedgerString.assertFromString("appId"),
+      commandId = Ref.LedgerString.assertFromString("cmdId"),
+      maxRecordTime = Time.Timestamp.assertFromInstant(Instant.EPOCH),
+      deduplicateUntil = Instant.EPOCH
+    )
+    val transactionMeta = TransactionMeta(
+      ledgerEffectiveTime = Time.Timestamp.assertFromInstant(ledgerTime),
+      workflowId = Some(Ref.LedgerString.assertFromString("wfid")),
+      submissionTime = Time.Timestamp.assertFromInstant(ledgerTime.plusNanos(3)),
+      submissionSeed = submissionSeed,
+      optUsedPackages = None,
+    )
 
-      ledger
-        .publishTransaction(submitterInfo, transactionMeta, dummyTransaction)
-        .map(_ shouldBe SubmissionResult.Acknowledged)
-      ledger
-        .ledgerEntries(None, None)
-        .runWith(Sink.head)
-        .map(_._2)
-        .map {
-          _ should matchPattern {
-            case LedgerEntry.Rejection(
-                _,
-                "cmdId",
-                "appId",
-                "submitter",
-                RejectionReason.TimedOut(_)) =>
-          }
+    ledger
+      .publishTransaction(submitterInfo, transactionMeta, dummyTransaction)
+      .map(_ shouldBe SubmissionResult.Acknowledged)
+  }
+
+  private[this] def firstLedgerEntry(ledger: Ledger) =
+    ledger
+      .ledgerEntries(None, None)
+      .runWith(Sink.head)
+      .map(_._2)
+
+  private[this] def expectInvalidLedgerTime(ledger: Ledger) = {
+    firstLedgerEntry(ledger)
+      .map {
+        _ should matchPattern {
+          case LedgerEntry.Rejection(
+          _,
+          "cmdId",
+          "appId",
+          "submitter",
+          RejectionReason.InvalidLedgerTime(_)) =>
         }
+      }
+  }
+
+  private[this] def expectValidTx(ledger: Ledger) = {
+    firstLedgerEntry(ledger)
+      .map {
+        _ should matchPattern {
+          case LedgerEntry.Transaction(
+          Some("cmdId"),
+          _,
+          Some("appId"),
+          Some("submitter"),
+          Some("wfid"),
+          _,
+          _,
+          _,
+          _,
+          ) =>
+        }
+      }
+  }
+
+  "A Ledger" should {
+    "accept transactions with ledger time that is right" in allFixtures { ledger =>
+      val ledgerTime = recordTime
+      publishTxAt(ledger, ledgerTime).flatMap(_ => expectValidTx(ledger))
+    }
+    "reject transactions with ledger time that is too low" in allFixtures { ledger =>
+      val ledgerTime = recordTime.minus(ledgerConfig.timeModel.minSkew).minusSeconds(1)
+      publishTxAt(ledger, ledgerTime).flatMap(_ => expectInvalidLedgerTime(ledger))
+    }
+    "reject transactions with ledger time that is too high" in allFixtures { ledger =>
+      val ledgerTime = recordTime.plus(ledgerConfig.timeModel.maxSkew).plusSeconds(1)
+      publishTxAt(ledger, ledgerTime).flatMap(_ => expectInvalidLedgerTime(ledger))
     }
   }
 
 }
 
-object TransactionMRTComplianceIT {
+object TransactionTimeModelComplianceIT {
+
+  private val recordTime = Instant.now
 
   private val ledgerId: LedgerId = LedgerId(Ref.LedgerString.assertFromString("ledgerId"))
   private val participantId: ParticipantId = Ref.ParticipantId.assertFromString("participantId")
-  private val timeProvider = TimeProvider.Constant(Instant.EPOCH.plusSeconds(10))
+  private val timeProvider = TimeProvider.Constant(recordTime)
   private val ledgerConfig = Configuration(0, TimeModel.reasonableDefault, Duration.ofDays(1))
-
-  private val LET = Instant.EPOCH.plusSeconds(2)
-  private val ST = LET.plusNanos(3)
-  private val MRT = Instant.EPOCH.plusSeconds(5)
 
   private implicit def toParty(s: String): Ref.Party = Ref.Party.assertFromString(s)
 
