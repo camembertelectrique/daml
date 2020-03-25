@@ -10,6 +10,7 @@ import DA.Daml.LF.Ast
 import DA.Daml.LF.TypeChecker.Error
 import Data.Maybe
 import Control.Monad.Extra
+import Data.List
 import qualified Data.NameMap as NM
 import qualified Data.Map.Strict as M
 import qualified Data.Text as T
@@ -24,6 +25,7 @@ import Control.Monad.Except (throwError)
 -- see 'FRName'.
 data Name
     = NModule ModuleName
+    | NModulePrefix ModuleName
     | NRecordType ModuleName TypeConName
     | NVariantType ModuleName TypeConName
     | NEnumType ModuleName TypeConName
@@ -38,6 +40,8 @@ displayName :: Name -> T.Text
 displayName = \case
     NModule (ModuleName m) ->
         T.concat ["module ", dot m]
+    NModulePrefix (ModuleName m) ->
+        T.concat ["module prefix ", dot m]
     NRecordType (ModuleName m) (TypeConName t) ->
         T.concat ["record ", dot m, ":", dot t]
     NVariantType (ModuleName m) (TypeConName t) ->
@@ -66,6 +70,9 @@ nameCollisionPermitted a b =
     case (a,b) of
         (NRecordType m1 _, NVariantCon m2 _ _) -> m1 == m2
         (NVariantCon m1 _ _, NRecordType m2 _) -> m1 == m2
+        (NModule _, NModulePrefix _) -> True
+        (NModulePrefix _, NModule _) -> True
+        (NModulePrefix _, NModulePrefix _) -> True
         _ -> False
 
 -- | Asks whether a name collision is forbidden.
@@ -86,6 +93,8 @@ newtype FRName = FRName [T.Text]
 fullyResolve :: Name -> FRName
 fullyResolve = FRName . map T.toLower . \case
     NModule (ModuleName m) ->
+        m
+    NModulePrefix (ModuleName m) ->
         m
     NRecordType (ModuleName m) (TypeConName t) ->
         m ++ t
@@ -167,8 +176,9 @@ checkTemplate moduleName Template{..} = do
         checkName (NChoice moduleName tplTypeCon chcName)
 
 checkModuleName :: Module -> NCMonad ()
-checkModuleName m =
-    checkName (NModule (moduleName m))
+checkModuleName (moduleName -> m) = do
+    checkName (NModule m)
+    mapM_ (checkName . NModulePrefix . ModuleName) (tail $ inits $ init $ unModuleName m)
 
 checkModuleBody :: Module -> NCMonad ()
 checkModuleBody m = do
