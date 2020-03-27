@@ -112,7 +112,6 @@ conformance_test(
         "--verbose",
         "--all-tests",
         "--exclude=ConfigManagementServiceIT",
-        "--exclude=CommandDeduplicationIT",
     ],
 )
 
@@ -132,7 +131,6 @@ conformance_test(
         "--verbose",
         "--all-tests",
         "--exclude=ConfigManagementServiceIT",
-        "--exclude=CommandDeduplicationIT",
     ],
 )
 

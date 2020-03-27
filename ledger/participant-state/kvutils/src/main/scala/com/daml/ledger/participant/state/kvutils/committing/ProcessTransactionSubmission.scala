@@ -3,6 +3,8 @@
 
 package com.daml.ledger.participant.state.kvutils.committing
 
+import java.time.Instant
+
 import com.codahale.metrics.{Counter, MetricRegistry, Timer}
 import com.daml.ledger.participant.state.kvutils.Conversions._
 import com.daml.ledger.participant.state.kvutils.DamlKvutils._
@@ -86,13 +88,20 @@ private[kvutils] class ProcessTransactionSubmission(
   ): Commit[Unit] = {
     val dedupKey = commandDedupKey(transactionEntry.submitterInfo)
     get(dedupKey).flatMap { dedupEntry =>
-      if (dedupEntry.isEmpty) {
+      def isAfterDeduplicationTime(stateValue: DamlStateValue): Boolean = {
+        lazy val cmdDedup = stateValue.getCommandDedup
+        lazy val dedupTime = parseTimestamp(cmdDedup.getDeduplicationTime).toInstant
+        !stateValue.hasCommandDedup || !cmdDedup.hasDeduplicationTime || dedupTime.isBefore(
+          Instant.now()) // should this use record time instead?
+      }
+      if (dedupEntry.forall(isAfterDeduplicationTime)) {
         Commit.set(
           dedupKey ->
             DamlStateValue.newBuilder
               .setCommandDedup(
                 DamlCommandDedupValue.newBuilder
                   .setRecordTime(buildTimestamp(recordTime))
+                  .setDeduplicationTime(transactionEntry.submitterInfo.getDeduplicateUntil)
                   .build)
               .build)
       } else {

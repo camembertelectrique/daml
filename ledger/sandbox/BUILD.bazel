@@ -405,19 +405,6 @@ server_conformance_test(
 )
 
 server_conformance_test(
-    name = "conformance-test-command-deduplication",
-    server_args = [
-        "--static-time",
-    ],
-    servers = SERVERS,
-    test_tool_args = [
-        "--verbose",
-        "--open-world",
-        "--include=CommandDeduplicationIT",
-    ],
-)
-
-server_conformance_test(
     name = "conformance-test-contract-id-seeding",
     server_args = [
         "--static-time",
@@ -430,7 +417,6 @@ server_conformance_test(
         "--all-tests",
         "--exclude=ConfigManagementServiceIT",
         "--exclude=ClosedWorldIT",
-        "--exclude=CommandDeduplicationIT",
     ],
 )
 
@@ -464,7 +450,6 @@ server_conformance_test(
         "--open-world",
         "--all-tests",
         "--exclude=ClosedWorldIT",
-        "--exclude=CommandDeduplicationIT",
         "--exclude=ConfigManagementServiceIT",
     ],
 )
@@ -480,7 +465,6 @@ server_conformance_test(
         "--open-world",
         "--all-tests",
         "--exclude=ClosedWorldIT",
-        "--exclude=CommandDeduplicationIT",
         "--exclude=ConfigManagementServiceIT",
     ],
 )
