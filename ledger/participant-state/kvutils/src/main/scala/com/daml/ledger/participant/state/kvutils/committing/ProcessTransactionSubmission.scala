@@ -3,8 +3,6 @@
 
 package com.daml.ledger.participant.state.kvutils.committing
 
-import java.time.Instant
-
 import com.codahale.metrics.{Counter, MetricRegistry, Timer}
 import com.daml.ledger.participant.state.kvutils.Conversions._
 import com.daml.ledger.participant.state.kvutils.DamlKvutils._
