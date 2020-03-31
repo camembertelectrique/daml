@@ -491,6 +491,7 @@ class Ledger {
     const protocols = ['jwt.token.' + this.token, 'daml.ws.auth'];
     const ws = new WebSocket(this.wsBaseUrl + endpoint, protocols);
     let haveSeenEvents = false;
+    let lastOffset: undefined | number = undefined;
     let state = init;
     const emitter = new EventEmitter();
     ws.onopen = () => {
@@ -513,6 +514,7 @@ class Ledger {
           state = change(state, events);
           if (isRecordWith('offset', json)) {
             haveSeenEvents = true;
+            lastOffset = jtv.Result.withException(jtv.number().run(json.offset));
           }
           emitter.emit('change', state, events);
         }
