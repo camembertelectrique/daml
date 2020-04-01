@@ -1,13 +1,13 @@
 // Copyright (c) 2020 Digital Asset (Switzerland) GmbH and/or its affiliates. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package com.digitalasset;
+package com.daml;
 
 import com.daml.ledger.javaapi.data.Int64;
 import com.daml.ledger.javaapi.data.Unit;
 import com.daml.ledger.javaapi.data.Value;
 import com.daml.ledger.javaapi.data.Variant;
-import com.digitalasset.ledger.api.v1.ValueOuterClass;
+import com.daml.ledger.api.v1.ValueOuterClass;
 import com.google.protobuf.Empty;
 import org.junit.jupiter.api.Test;
 import org.junit.platform.runner.JUnitPlatform;

@@ -1,9 +1,9 @@
 // Copyright (c) 2020 Digital Asset (Switzerland) GmbH and/or its affiliates. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package com.digitalasset.http.json
+package com.daml.http.json
 
-import com.digitalasset.http.Generators.{
+import com.daml.http.Generators.{
   OptionalPackageIdGen,
   contractGen,
   contractLocatorGen,
@@ -15,8 +15,8 @@ import com.digitalasset.http.Generators.{
   genUnknownTemplateIds,
   genWarningsWrapper
 }
-import com.digitalasset.http.Statement.discard
-import com.digitalasset.http.domain
+import com.daml.http.Statement.discard
+import com.daml.http.domain
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Gen.{identifier, listOf}
 import org.scalatest.prop.GeneratorDrivenPropertyChecks

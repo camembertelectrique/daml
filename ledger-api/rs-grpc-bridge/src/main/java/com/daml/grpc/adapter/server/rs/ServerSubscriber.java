@@ -1,10 +1,10 @@
 // Copyright (c) 2020 Digital Asset (Switzerland) GmbH and/or its affiliates. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package com.digitalasset.grpc.adapter.server.rs;
+package com.daml.grpc.adapter.server.rs;
 
-import com.digitalasset.grpc.adapter.CallCounter;
-import com.digitalasset.grpc.adapter.ExecutionSequencer;
+import com.daml.grpc.adapter.CallCounter;
+import com.daml.grpc.adapter.ExecutionSequencer;
 import io.grpc.Status;
 import io.grpc.stub.ServerCallStreamObserver;
 import org.reactivestreams.Subscriber;

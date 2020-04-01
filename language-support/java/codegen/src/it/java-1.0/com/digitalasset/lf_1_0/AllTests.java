@@ -1,9 +1,9 @@
 // Copyright (c) 2020 Digital Asset (Switzerland) GmbH and/or its affiliates. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package com.digitalasset.lf_1_0;
+package com.daml.lf_1_0;
 
-import com.digitalasset.AllGenericTests;
+import com.daml.AllGenericTests;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 

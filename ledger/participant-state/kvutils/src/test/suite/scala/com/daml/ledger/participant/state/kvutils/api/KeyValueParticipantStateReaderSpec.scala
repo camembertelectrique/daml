@@ -13,7 +13,7 @@ import com.daml.ledger.participant.state.kvutils.api.KeyValueParticipantStateRea
 import com.daml.ledger.participant.state.kvutils.api.LedgerEntry.LedgerRecord
 import com.daml.ledger.participant.state.kvutils.{Bytes, Envelope, KVOffset}
 import com.daml.ledger.participant.state.v1.{Offset, Update}
-import com.digitalasset.ledger.api.testing.utils.AkkaBeforeAndAfterAll
+import com.daml.ledger.api.testing.utils.AkkaBeforeAndAfterAll
 import com.google.protobuf.ByteString
 import org.mockito.ArgumentMatchers._
 import org.mockito.Mockito.when

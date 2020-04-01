@@ -3,12 +3,12 @@
 
 syntax = "proto3";
 
-package com.digitalasset.ledger.api.v1;
+package com.daml.ledger.api.v1;
 
 
 option java_outer_classname = "LedgerOffsetOuterClass";
-option java_package = "com.digitalasset.ledger.api.v1";
-option csharp_namespace = "Com.DigitalAsset.Ledger.Api.V1";
+option java_package = "com.daml.ledger.api.v1";
+option csharp_namespace = "Com.Daml.Ledger.Api.V1";
 
 // Describes a specific point on the ledger.
 message LedgerOffset {

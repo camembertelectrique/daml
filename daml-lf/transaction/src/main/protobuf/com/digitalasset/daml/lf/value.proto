@@ -12,9 +12,9 @@
 // * 5: new message Enum, incorporated into Value sum
 syntax = "proto3";
 
-package com.digitalasset.daml.lf.value;
+package com.daml.lf.value;
 
-option java_package = "com.digitalasset.daml.lf.value";
+option java_package = "com.daml.lf.value";
 
 import "google/protobuf/empty.proto";
 

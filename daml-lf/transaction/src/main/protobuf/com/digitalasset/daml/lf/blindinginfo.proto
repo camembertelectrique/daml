@@ -3,9 +3,9 @@
 
 syntax = "proto3";
 
-package com.digitalasset.daml.lf.blinding;
+package com.daml.lf.blinding;
 
-option java_package = "com.digitalasset.daml.lf.blinding";
+option java_package = "com.daml.lf.blinding";
 
 // a relation between a node and a set of parties
 message NodeParties {

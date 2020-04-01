@@ -141,7 +141,7 @@ message DamlSubmitterInfo {
 // their source).
 message DamlTransactionEntry {
   // The original submitted transaction, with relative identifiers.
-  com.digitalasset.daml.lf.transaction.Transaction transaction = 1;
+  com.daml.lf.transaction.Transaction transaction = 1;
 
   // The submitting party and metadata about the submitted command.
   // The submitting party is authorized against the submitting participant
@@ -405,12 +405,12 @@ message DamlContractState {
   DamlContractKey contract_key = 6;
 
   // The contract instance.
-  com.digitalasset.daml.lf.transaction.ContractInstance contract_instance = 7;
+  com.daml.lf.transaction.ContractInstance contract_instance = 7;
 }
 
 message DamlContractKey {
   // The DAML template identifier of the contract that created this key.
-  com.digitalasset.daml.lf.value.Identifier template_id = 1;
+  com.daml.lf.value.Identifier template_id = 1;
 
   reserved 2; // This was key serialized as a VersionedValue. Replaced by hash.
 

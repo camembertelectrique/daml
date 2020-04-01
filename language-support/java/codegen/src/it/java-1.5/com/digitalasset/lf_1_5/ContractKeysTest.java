@@ -1,7 +1,7 @@
 // Copyright (c) 2020 Digital Asset (Switzerland) GmbH and/or its affiliates. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package com.digitalasset.lf_1_5;
+package com.daml.lf_1_5;
 
 import da.types.Tuple2;
 import da.types.Tuple3;

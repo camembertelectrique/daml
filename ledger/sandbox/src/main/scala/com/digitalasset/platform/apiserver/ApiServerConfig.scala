@@ -1,14 +1,14 @@
 // Copyright (c) 2020 Digital Asset (Switzerland) GmbH and/or its affiliates. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package com.digitalasset.platform.apiserver
+package com.daml.platform.apiserver
 
 import java.io.File
 import java.nio.file.Path
 
 import com.daml.ledger.participant.state.v1.ParticipantId
-import com.digitalasset.ledger.api.tls.TlsConfiguration
-import com.digitalasset.ports.Port
+import com.daml.ledger.api.tls.TlsConfiguration
+import com.daml.ports.Port
 
 case class ApiServerConfig(
     participantId: ParticipantId,
