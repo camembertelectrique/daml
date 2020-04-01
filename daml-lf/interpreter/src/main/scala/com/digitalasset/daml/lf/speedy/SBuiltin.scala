@@ -815,6 +815,13 @@ object SBuiltin {
         )
         .fold(err => throw DamlETransactionError(err), identity)
 
+      coid match {
+        case V.AbsoluteContractId.V1(discriminator, _) =>
+          if (machine.globalDiscriminators.contains(discriminator))
+            crash(s"The local discriminator $discriminator is not fresh within the transaction")
+        case _ =>
+      }
+
       machine.ptx = newPtx
       machine.ctrl = CtrlValue(SContractId(coid))
       checkAborted(machine.ptx)
@@ -897,14 +904,22 @@ object SBuiltin {
     }
   }
 
-  // This function translates well-typed values.
-  // Raises an exception if missing packages.
+  // This function translates well-typed LF Value coming from the ledger to
+  // SValue and set the control of `machine` with the result.
+  // Additionally it collects the discriminator contained in the value and
+  // updates machine.globalDiscriminators accordingly.
+  // Raises an exception if
+  //  -- missing packages or
+  //  -- encounters a discriminator conflicting with a local discriminator
   @throws[SpeedyHungry]
-  def translateValue(machine: Machine, value: V[V.ContractId]): CtrlValue = {
+  def importValue(machine: Machine, value: V[V.ContractId]): Unit = {
+    val cids = Set.newBuilder[V.ContractId]
     def go(value0: V[V.ContractId]): SValue =
       value0 match {
         case V.ValueList(vs) => SList(vs.map[SValue](go))
-        case V.ValueContractId(coid) => SContractId(coid)
+        case V.ValueContractId(coid) =>
+          cids += coid
+          SContractId(coid)
         case V.ValueInt64(x) => SInt64(x)
         case V.ValueNumeric(x) => SNumeric(x)
         case V.ValueText(t) => SText(t)
@@ -965,7 +980,7 @@ object SBuiltin {
                   id.packageId,
                   pkg => {
                     machine.compiledPackages = pkg
-                    machine.ctrl = translateValue(machine, value)
+                    importValue(machine, value)
                   }
                 ))
           }
@@ -984,12 +999,14 @@ object SBuiltin {
                   id.packageId,
                   pkg => {
                     machine.compiledPackages = pkg
-                    machine.ctrl = translateValue(machine, value)
+                    importValue(machine, value)
                   }
                 ))
           }
       }
-    CtrlValue(go(value))
+
+    machine.addGlobalContractIds(cids.result())
+    machine.ctrl = CtrlValue(go(value))
   }
 
   /** $fetch[T]
@@ -1016,17 +1033,15 @@ object SBuiltin {
                     templateId,
                     machine.committers,
                     cbMissing = _ => machine.tryHandleException(),
-                    cbPresent = {
-                      coinst =>
-                        // Note that we cannot throw in this continuation -- instead
-                        // set the control appropriately which will crash the machine
-                        // correctly later.
-                        if (coinst.template != templateId) {
-                          machine.ctrl =
-                            CtrlWronglyTypeContractId(acoid, templateId, coinst.template)
-                        } else {
-                          machine.ctrl = translateValue(machine, coinst.arg.value)
-                        }
+                    cbPresent = { coinst =>
+                      // Note that we cannot throw in this continuation -- instead
+                      // set the control appropriately which will crash the machine
+                      // correctly later.
+                      if (coinst.template != templateId) {
+                        machine.ctrl = CtrlWronglyTypeContractId(acoid, templateId, coinst.template)
+                      } else {
+                        importValue(machine, coinst.arg.value)
+                      }
                     },
                   ),
                 )
@@ -1046,7 +1061,7 @@ object SBuiltin {
         // (see below).
         crash(s"Relative contract $coid ($templateId) not found from partial transaction")
       } else {
-        machine.ctrl = translateValue(machine, coinst.arg.value)
+        importValue(machine, coinst.arg.value)
       }
     }
   }
@@ -1117,12 +1132,13 @@ object SBuiltin {
               gkey,
               machine.committers,
               cbMissing = _ => {
-                machine.ptx = machine.ptx.copy(keys = machine.ptx.keys + (gkey -> None))
+                machine.ptx = machine.ptx.addContractKey(gkey, None)
                 machine.ctrl = CtrlValue.None
                 true
               },
               cbPresent = { contractId =>
-                machine.ptx = machine.ptx.copy(keys = machine.ptx.keys + (gkey -> Some(contractId)))
+                machine.addGlobalContractIds(List(contractId))
+                machine.ptx = machine.ptx.addContractKey(gkey, Some(contractId))
                 machine.ctrl = CtrlValue(SOptional(Some(SContractId(contractId))))
               },
             ),
@@ -1188,11 +1204,11 @@ object SBuiltin {
               gkey,
               machine.committers,
               cbMissing = _ => {
-                machine.ptx = machine.ptx.copy(keys = machine.ptx.keys + (gkey -> None))
+                machine.ptx = machine.ptx.addContractKey(gkey, None)
                 machine.tryHandleException()
               },
               cbPresent = { contractId =>
-                machine.ptx = machine.ptx.copy(keys = machine.ptx.keys + (gkey -> Some(contractId)))
+                machine.ptx = machine.ptx.addContractKey(gkey, Some(contractId))
                 machine.ctrl = CtrlValue(SContractId(contractId))
               },
             ),
@@ -1219,6 +1235,10 @@ object SBuiltin {
       machine.committers = extractParties(args.get(0))
       machine.commitLocation = optLocation
       machine.ctrl = CtrlValue.Unit
+      val inputContractIds = args.asScala.foldLeft(Set.empty[V.ContractId])(
+        (acc, v) => acc ++ collectCids(SEValue(v))
+      )
+      machine.addGlobalContractIds(inputContractIds)
     }
   }
 

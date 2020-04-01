@@ -60,6 +60,13 @@ object Speedy {
       traceLog: TraceLog,
       /* Compiled packages (DAML-LF ast + compiled speedy expressions). */
       var compiledPackages: CompiledPackages,
+      /* The  set of all the input discriminators, that is the discriminator of
+       * the contracts IDs:
+       * - that appear in the interpreted commands,
+       * - that appear in the body of fetched contracts,
+       * - of contracts fetched by key.
+       */
+      var globalDiscriminators: Set[crypto.Hash],
       /* Flag to trace usage of get_time builtins */
       var dependsOnTime: Boolean,
   ) {
@@ -68,6 +75,18 @@ object Speedy {
     def getEnv(i: Int): SValue = env.get(env.size - i)
     def popEnv(count: Int): Unit =
       env.subList(env.size - count, env.size).clear
+
+    /** Update the global contract discriminators.
+      *  Raise an error in case of conflict with local discriminator
+      */
+    def addGlobalContractIds(discriminators: Traversable[V.ContractId]): Unit =
+      globalDiscriminators = discriminators.foldLeft(globalDiscriminators) {
+        case (acc, V.AbsoluteContractId.V1(discriminator, _)) =>
+          if (ptx.localContracts.isDefinedAt(V.AbsoluteContractId.V1(discriminator)))
+            crash(s"The local discriminator $discriminator  is not fresh within the transaction")
+          acc + discriminator
+        case (acc, _) => acc
+      }
 
     /** Push a single location to the continuation stack for the sake of
         maintaining a stack trace. */
@@ -250,6 +269,7 @@ object Speedy {
         )
       } yield newSeed -> time
       ptx = PartialTransaction.initial(seedWithTime)
+      globalDiscriminators = Set.empty
     }
 
   }
@@ -262,9 +282,10 @@ object Speedy {
         checkSubmitterInMaintainers: Boolean,
         compiledPackages: CompiledPackages,
         seedWithTime: Option[(crypto.Hash, Time.Timestamp)],
+        sexpr: SExpr
     ) =
       Machine(
-        ctrl = null,
+        ctrl = CtrlExpr(sexpr),
         env = emptyEnv,
         kont = new util.ArrayList[Kont](128),
         lastLocation = None,
@@ -275,6 +296,9 @@ object Speedy {
         compiledPackages = compiledPackages,
         checkSubmitterInMaintainers = checkSubmitterInMaintainers,
         validating = false,
+        globalDiscriminators = collectCids(sexpr).collect {
+          case V.AbsoluteContractId.V1(discriminator, _) => discriminator
+        },
         dependsOnTime = false,
       )
 
@@ -333,8 +357,7 @@ object Speedy {
         compiledPackages: CompiledPackages,
         seedWithTime: Option[(crypto.Hash, Time.Timestamp)] = None,
     ): Machine =
-      initial(checkSubmitterInMaintainers, compiledPackages, seedWithTime).copy(
-        ctrl = CtrlExpr(sexpr))
+      initial(checkSubmitterInMaintainers, compiledPackages, seedWithTime, sexpr)
   }
 
   /** Control specifies the thing that the machine should be reducing.
