@@ -235,6 +235,7 @@ da_scala_test_suite(
                 "--all-tests",
                 "--exclude=ConfigManagementServiceIT",
                 "--exclude=CommandDeduplicationIT",
+                "--exclude=PerformanceEnvelope.Throughput,PerformanceEnvelope.Latency",
             ],
         ),
         conformance_test(
@@ -249,6 +250,21 @@ da_scala_test_suite(
             test_tool_args = db.get("conformance_test_tool_args", []) + [
                 "--verbose",
                 "--include=ConfigManagementServiceIT",
+            ],
+        ),
+        conformance_test(
+            name = "benchmark-performance-envelope-{}".format(db["name"]),
+            ports = [6865],
+            server = ":conformance-test-{}-bin".format(db["name"]),
+            server_args = [
+                "--contract-id-seeding=testing-weak",
+                "--participant participant-id=example,port=6865",
+            ] + db.get("conformance_test_server_args", []),
+            tags = db.get("benchmark_performance_envelope_tags", []),
+            test_tool_args = db.get("benchmark_performance_envelope_tags", []) + [
+                "--verbose",
+                "--include=PerformanceEnvelope.Throughput",
+                "--include=PerformanceEnvelope.Latency",
             ],
         ),
     )

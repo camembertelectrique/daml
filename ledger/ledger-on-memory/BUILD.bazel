@@ -116,6 +116,7 @@ conformance_test(
         "--all-tests",
         "--exclude=ConfigManagementServiceIT",
         "--exclude=CommandDeduplicationIT",
+        "--exclude=PerformanceEnvelope.Throughput,PerformanceEnvelope.Latency",
     ],
 )
 
@@ -136,6 +137,7 @@ conformance_test(
         "--all-tests",
         "--exclude=ConfigManagementServiceIT",
         "--exclude=CommandDeduplicationIT",
+        "--exclude=PerformanceEnvelope.Throughput,PerformanceEnvelope.Latency",
     ],
 )
 
@@ -150,6 +152,21 @@ conformance_test(
     test_tool_args = [
         "--verbose",
         "--include=ConfigManagementServiceIT",
+    ],
+)
+
+conformance_test(
+    name = "benchmark-performance-envelope",
+    ports = [6865],
+    server = ":app",
+    server_args = [
+        "--contract-id-seeding=testing-weak",
+        "--participant participant-id=example,port=6865",
+    ],
+    test_tool_args = [
+        "--verbose",
+        "--include=PerformanceEnvelope.Throughput",
+        "--include=PerformanceEnvelope.Latency",
     ],
 )
 

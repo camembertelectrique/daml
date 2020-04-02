@@ -360,6 +360,7 @@ server_conformance_test(
         "--exclude=LotsOfPartiesIT",
         "--exclude=ConfigManagementServiceIT",
         "--exclude=ClosedWorldIT",
+        "--exclude=PerformanceEnvelope.Throughput,PerformanceEnvelope.Latency",
     ],
 )
 
@@ -390,6 +391,7 @@ server_conformance_test(
         "--exclude=LotsOfPartiesIT",
         "--exclude=ConfigManagementServiceIT",
         "--exclude=ClosedWorldIT",
+        "--exclude=PerformanceEnvelope.Throughput,PerformanceEnvelope.Latency",
     ],
 )
 
@@ -433,6 +435,7 @@ server_conformance_test(
         "--exclude=ConfigManagementServiceIT",
         "--exclude=ClosedWorldIT",
         "--exclude=CommandDeduplicationIT",
+        "--exclude=PerformanceEnvelope.Throughput,PerformanceEnvelope.Latency",
     ],
 )
 
@@ -468,6 +471,7 @@ server_conformance_test(
         "--exclude=ClosedWorldIT",
         "--exclude=CommandDeduplicationIT",
         "--exclude=ConfigManagementServiceIT",
+        "--exclude=PerformanceEnvelope.Throughput,PerformanceEnvelope.Latency",
     ],
 )
 
@@ -484,6 +488,7 @@ server_conformance_test(
         "--exclude=ClosedWorldIT",
         "--exclude=CommandDeduplicationIT",
         "--exclude=ConfigManagementServiceIT",
+        "--exclude=PerformanceEnvelope.Throughput,PerformanceEnvelope.Latency",
     ],
 )
 
